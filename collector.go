@@ -27,7 +27,7 @@ type NvidiaCollector struct {
 
 func newNvidiaCollector() *NvidiaCollector {
 	namespace := "nvidia_gpu"
-	labels := []string{"path", "uuid", "name"}
+	labels := []string{"path", "uuid", "node", "name"}
 	nc := &NvidiaCollector{
 		numDevices: prometheus.NewGauge(
 			prometheus.GaugeOpts{
@@ -114,11 +114,15 @@ func (nc *NvidiaCollector) Collect(ch chan<- prometheus.Metric) {
 		path := device.Path
 		name := device.Model
 		uuid := device.UUID
+		node, err := os.Hostname()
+		if err != nil {
+			panic(err)
+		}
 
-		nc.memoryUsed.WithLabelValues(path, uuid, *name).Set(float64(*st.Memory.Global.Used))
-		nc.memoryTotal.WithLabelValues(path, uuid, *name).Set(float64(*device.Memory))
-		nc.powerUsage.WithLabelValues(path, uuid, *name).Set(float64(*st.Power))
-		nc.temperature.WithLabelValues(path, uuid, *name).Set(float64(*st.Temperature))
+		nc.memoryUsed.WithLabelValues(path, uuid, node, *name).Set(float64(*st.Memory.Global.Used))
+		nc.memoryTotal.WithLabelValues(path, uuid, node, *name).Set(float64(*device.Memory))
+		nc.powerUsage.WithLabelValues(path, uuid, node, *name).Set(float64(*st.Power))
+		nc.temperature.WithLabelValues(path, uuid, node, *name).Set(float64(*st.Temperature))
 
 	}
 	nc.memoryUsed.Collect(ch)
